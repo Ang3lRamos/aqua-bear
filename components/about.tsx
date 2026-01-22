@@ -19,7 +19,7 @@ export function About() {
           src="/images/team.png"
           alt="Equipo Aqua Bear Swim Club"
           fill
-          className="object-cover object-center"
+          className="object-cover object-[70%_center] sm:object-center"
           priority
           sizes="100vw"
         />
