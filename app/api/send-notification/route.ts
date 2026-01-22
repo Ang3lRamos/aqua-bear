@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
             </table>
             
             <div style="margin-top: 30px; padding: 20px; background: #1e4a6e; border-radius: 8px; text-align: center;">
-              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://aquabear.vercel.app'}/admin" 
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://aqua-bear.vercel.app'}/admin" 
                  style="color: white; text-decoration: none; font-weight: bold; font-size: 16px;">
                 Ver en Panel de Administracion
               </a>

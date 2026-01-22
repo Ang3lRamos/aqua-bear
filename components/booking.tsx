@@ -1,8 +1,6 @@
 "use client"
 
-import React from "react"
-
-import { useState, useMemo } from "react"
+import React, { useState, useMemo, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -46,6 +44,7 @@ export function Booking() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const sectionRef = useRef<HTMLElement>(null)
   
   const [formData, setFormData] = useState({
     name: "",
@@ -56,6 +55,16 @@ export function Booking() {
     participants: "1",
     notes: ""
   })
+
+  // Scroll to section when success message appears
+  useEffect(() => {
+    if (isSuccess && sectionRef.current) {
+      sectionRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      })
+    }
+  }, [isSuccess])
 
   // Filtrar horarios disponibles basado en la fecha seleccionada
   const availableTimeSlots = useMemo(() => {
@@ -164,11 +173,9 @@ export function Booking() {
     }
   }
 
-  
-
   if (isSuccess) {
     return (
-      <section id="reservas" className="py-20 bg-card">
+      <section ref={sectionRef} id="reservas" className="py-20 bg-card">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <Card className="border-accent/50">
             <CardContent className="pt-12 pb-12 text-center">
@@ -176,13 +183,13 @@ export function Booking() {
                 <CheckCircle2 className="w-8 h-8 text-accent" />
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">
-                Reserva Recibida
+                ¡Reserva Recibida!
               </h3>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
                 Hemos recibido tu solicitud de reserva. Nos pondremos en contacto 
                 contigo pronto para confirmar los detalles.
               </p>
-              <Button onClick={() => setIsSuccess(false)}>
+              <Button onClick={() => setIsSuccess(false)} size="lg">
                 Hacer Otra Reserva
               </Button>
             </CardContent>
@@ -193,7 +200,7 @@ export function Booking() {
   }
 
   return (
-    <section id="reservas" className="py-20 bg-card">
+    <section ref={sectionRef} id="reservas" className="py-20 bg-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
