@@ -72,7 +72,6 @@ export default function AdminPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  // Verificar autenticación al cargar
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -109,7 +108,6 @@ export default function AdminPage() {
   useEffect(() => {
     fetchReservations()
     
-    // Suscribirse a nuevas reservas en tiempo real
     const channel = supabase
       .channel('reservations-changes')
       .on(
@@ -124,14 +122,12 @@ export default function AdminPage() {
           setReservations(prev => [newRes, ...prev])
           setNewReservation(newRes)
           
-          // Reproducir sonido de notificacion
           try {
             const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2Onp+dlYh3aGR3iZeempmMfW5ncoCOmJmYjoF0aGt/jZeXlY2CdmtsfoqVl5aNg3drbnyIk5aUjIN4bW18iJOVk4yDeG5ufIiSlJKLgndubXyIkZOSi4J3b258h5CSkYqBd29ue4eQkZCJgXdvbnuHj5CPiYB3b257ho+Pjoh/d29teoeOjo2Hf3ZubXqGjo6NiH92bm16ho2NjIh/dm5teYaNjYyHfnZubHmGjIyLhn52bWx5hYyLi4Z+dW1seYWLiouFfnVtbHmFi4qKhH51bGx4hIuKiYR9dWxsd4SJiYmDfHRsbHeEiYiIg3x0a2x3hImIiIN8dGtrd4OIh4eCe3Rranb/')
             audio.volume = 0.5
             audio.play().catch(() => {})
           } catch {}
           
-          // Ocultar notificacion despues de 10 segundos
           setTimeout(() => setNewReservation(null), 10000)
         }
       )
@@ -143,10 +139,9 @@ export default function AdminPage() {
   }, [])
 
   const sendWhatsAppConfirmation = (reservation: Reservation, isConfirmed: boolean) => {
-    const phone = reservation.phone.replace(/\D/g, '') // Limpiar numero
+    const phone = reservation.phone.replace(/\D/g, '')
     const serviceName = serviceLabels[reservation.service_type] || reservation.service_type || "Clase"
     
-    // Formatear fecha de forma segura
     let dateFormatted = "Fecha por confirmar"
     if (reservation.reservation_date) {
       try {
@@ -366,7 +361,6 @@ export default function AdminPage() {
     </div>
   )
 
-  // Mostrar loading mientras verifica autenticación
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -377,7 +371,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Notificacion de nueva reserva */}
       {newReservation && (
         <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
           <Card className="w-80 border-primary shadow-lg">
@@ -415,7 +408,7 @@ export default function AdminPage() {
                 <ArrowLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">Volver al sitio</span>
               </Link>
-              <div className="h-6 w-px bg-border" />
+              <div className="h-6 w-px bg-border hidden sm:block" />
               <div className="flex items-center gap-3">
                 <Image
                   src="/images/image.png"
@@ -425,19 +418,17 @@ export default function AdminPage() {
                   className="rounded-full"
                 />
                 <div>
-                  <h1 className="text-xl font-bold text-foreground">Panel de Administración</h1>
-                  <p className="text-sm text-muted-foreground">Gestión de Reservas</p>
+                  <h1 className="text-lg sm:text-xl font-bold text-foreground">Panel Admin</h1>
+                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Gestión de Reservas</p>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={fetchReservations} disabled={loading}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-                <span className="hidden sm:inline">Actualizar</span>
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
               </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Salir</span>
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -445,42 +436,42 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8">
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pendientes</p>
-                  <p className="text-3xl font-bold text-yellow-600">{pendingCount}</p>
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div className="text-center sm:text-left">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Pendientes</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-yellow-600">{pendingCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-yellow-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Confirmadas</p>
-                  <p className="text-3xl font-bold text-green-600">{confirmedCount}</p>
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div className="text-center sm:text-left">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Confirmadas</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-green-600">{confirmedCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Canceladas</p>
-                  <p className="text-3xl font-bold text-red-600">{cancelledCount}</p>
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div className="text-center sm:text-left">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Canceladas</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-red-600">{cancelledCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                  <XCircle className="w-6 h-6 text-red-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
                 </div>
               </div>
             </CardContent>
@@ -501,20 +492,22 @@ export default function AdminPage() {
               </div>
             ) : (
               <Tabs defaultValue="pending">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="pending">
-                    Pendientes ({pendingCount})
-                  </TabsTrigger>
-                  <TabsTrigger value="confirmed">
-                    Confirmadas ({confirmedCount})
-                  </TabsTrigger>
-                  <TabsTrigger value="cancelled">
-                    Canceladas ({cancelledCount})
-                  </TabsTrigger>
-                  <TabsTrigger value="all">
-                    Todas ({reservations.length})
-                  </TabsTrigger>
-                </TabsList>
+                <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
+                  <TabsList className="mb-4 w-max sm:w-auto">
+                    <TabsTrigger value="pending" className="text-xs sm:text-sm whitespace-nowrap">
+                      Pendientes ({pendingCount})
+                    </TabsTrigger>
+                    <TabsTrigger value="confirmed" className="text-xs sm:text-sm whitespace-nowrap">
+                      Confirmadas ({confirmedCount})
+                    </TabsTrigger>
+                    <TabsTrigger value="cancelled" className="text-xs sm:text-sm whitespace-nowrap">
+                      Canceladas ({cancelledCount})
+                    </TabsTrigger>
+                    <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-nowrap">
+                      Todas ({reservations.length})
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
                 <TabsContent value="pending">
                   <ReservationTable data={filterByStatus("pending")} />
                 </TabsContent>

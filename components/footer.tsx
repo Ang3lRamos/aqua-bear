@@ -95,7 +95,7 @@ export function Footer() {
                     target={contact.href.startsWith('http') ? '_blank' : undefined}
                     rel={contact.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   >
-                    <contact.icon className="w-4 h-4 flex-shrink-0" />
+                    <contact.icon className="w-4 h-4 shrink-0" />
                     <span className="truncate">{contact.label}</span>
                   </Link>
                 </li>

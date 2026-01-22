@@ -56,7 +56,7 @@ export function Contact() {
             rel="noopener noreferrer"
             className="block group"
           >
-            <Card className="bg-gradient-to-br from-[#25D366] to-[#128C7E] text-white border-0 h-full transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer">
+            <Card className="bg-linear-to-br from-[#25D366] to-[#128C7E] text-white border-0 h-full transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                   <MessageCircle className="w-8 h-8" />
@@ -85,7 +85,7 @@ export function Contact() {
             rel="noopener noreferrer"
             className="block group"
           >
-            <Card className="bg-gradient-to-br from-pink-500 via-purple-500 to-orange-400 text-white border-0 h-full transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer">
+            <Card className="bg-linear-to-br from-pink-500 via-purple-500 to-orange-400 text-white border-0 h-full transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                   <Instagram className="w-8 h-8" />

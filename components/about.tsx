@@ -24,7 +24,7 @@ export function About() {
           sizes="100vw"
         />
         {/* Gradient Overlay - Más fuerte en móvil */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/98 via-primary/90 to-primary/75 sm:from-primary/95 sm:via-primary/85 sm:to-primary/70" />
+        <div className="absolute inset-0 bg-linear-to-r from-primary/98 via-primary/90 to-primary/75 sm:from-primary/95 sm:via-primary/85 sm:to-primary/70" />
       </div>
       
       {/* Content */}
