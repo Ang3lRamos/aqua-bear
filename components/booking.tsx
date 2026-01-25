@@ -1,6 +1,8 @@
 "use client"
 
-import React, { useState, useMemo, useRef, useEffect } from "react"
+import React from "react"
+
+import { useState, useMemo, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,6 +20,24 @@ const services = [
   { value: "competitive", label: "Entrenamiento Competitivo" },
   { value: "membership", label: "Membresía - Acceso a Piscina" },
   { value: "aquagym", label: "Aquagym / Rehabilitación" },
+]
+
+const countryCodes = [
+  { value: "52", label: "MX +52", country: "Mexico" },
+  { value: "1", label: "US +1", country: "Estados Unidos" },
+  { value: "57", label: "CO +57", country: "Colombia" },
+  { value: "34", label: "ES +34", country: "Espana" },
+  { value: "54", label: "AR +54", country: "Argentina" },
+  { value: "56", label: "CL +56", country: "Chile" },
+  { value: "51", label: "PE +51", country: "Peru" },
+  { value: "593", label: "EC +593", country: "Ecuador" },
+  { value: "58", label: "VE +58", country: "Venezuela" },
+  { value: "502", label: "GT +502", country: "Guatemala" },
+  { value: "503", label: "SV +503", country: "El Salvador" },
+  { value: "504", label: "HN +504", country: "Honduras" },
+  { value: "505", label: "NI +505", country: "Nicaragua" },
+  { value: "506", label: "CR +506", country: "Costa Rica" },
+  { value: "507", label: "PA +507", country: "Panama" },
 ]
 
 const allTimeSlots = [
@@ -49,8 +69,8 @@ export function Booking() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    countryCode: "52",
     phone: "",
-    phonePrefix: "+52",
     service: "",
     time: "",
     participants: "1",
@@ -110,12 +130,15 @@ export function Booking() {
     try {
       const supabase = getSupabaseBrowserClient()
       
+      // Combinar codigo de pais con telefono
+      const fullPhone = `+${formData.countryCode}${formData.phone.replace(/\D/g, '')}`
+      
       const { error: insertError } = await supabase
         .from('reservations')
         .insert({
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
+          phone: fullPhone,
           service_type: formData.service,
           reservation_date: date.toISOString().split('T')[0],
           reservation_time: formData.time,
@@ -141,7 +164,7 @@ export function Booking() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: formData.name,
-            phone: formData.phone,
+            phone: fullPhone,
             email: formData.email,
             service: serviceName,
             date: dateFormatted,
@@ -159,8 +182,8 @@ export function Booking() {
       setFormData({
         name: "",
         email: "",
+        countryCode: "52",
         phone: "",
-        phonePrefix: "+52",
         service: "",
         time: "",
         participants: "1",
@@ -174,6 +197,8 @@ export function Booking() {
       setIsSubmitting(false)
     }
   }
+
+  
 
   if (isSuccess) {
     return (
@@ -310,18 +335,18 @@ export function Booking() {
                     <Label htmlFor="phone">Teléfono / WhatsApp</Label>
                     <div className="flex gap-2">
                       <Select
-                        value={formData.phonePrefix}
-                        onValueChange={(value) => setFormData({ ...formData, phonePrefix: value })}
+                        value={formData.countryCode}
+                        onValueChange={(value) => setFormData({ ...formData, countryCode: value })}
                       >
-                        <SelectTrigger className="w-25 sm:w-27.5">
+                        <SelectTrigger className="w-28 shrink-0">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="+52">🇲🇽 +52</SelectItem>
-                          <SelectItem value="+1">🇺🇸 +1</SelectItem>
-                          <SelectItem value="+57">🇨🇴 +57</SelectItem>
-                          <SelectItem value="+34">🇪🇸 +34</SelectItem>
-                          <SelectItem value="+54">🇦🇷 +54</SelectItem>
+                          {countryCodes.map((code) => (
+                            <SelectItem key={code.value} value={code.value}>
+                              {code.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <Input
@@ -331,7 +356,7 @@ export function Booking() {
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="123 456 7890"
-                        className="flex-1 min-w-0"
+                        className="flex-1"
                       />
                     </div>
                   </div>
