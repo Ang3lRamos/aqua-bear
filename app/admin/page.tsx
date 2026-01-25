@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Table,
   TableBody,
   TableCell,
@@ -25,7 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Calendar, Clock, Users, CheckCircle2, XCircle, Loader2, RefreshCw, ArrowLeft, LogOut, Bell } from "lucide-react"
+import { Calendar, Clock, Users, CheckCircle2, XCircle, Loader2, RefreshCw, ArrowLeft, LogOut, Bell, ChevronLeft, ChevronRight, CalendarDays, List, Phone, Mail, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -65,6 +72,9 @@ export default function AdminPage() {
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
   const [newReservation, setNewReservation] = useState<Reservation | null>(null)
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list")
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const router = useRouter()
   
   const supabase = createBrowserClient(
@@ -72,6 +82,7 @@ export default function AdminPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
+  // Verificar autenticación al cargar
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -108,6 +119,7 @@ export default function AdminPage() {
   useEffect(() => {
     fetchReservations()
     
+    // Suscribirse a nuevas reservas en tiempo real
     const channel = supabase
       .channel('reservations-changes')
       .on(
@@ -122,12 +134,14 @@ export default function AdminPage() {
           setReservations(prev => [newRes, ...prev])
           setNewReservation(newRes)
           
+          // Reproducir sonido de notificacion
           try {
             const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2Onp+dlYh3aGR3iZeempmMfW5ncoCOmJmYjoF0aGt/jZeXlY2CdmtsfoqVl5aNg3drbnyIk5aUjIN4bW18iJOVk4yDeG5ufIiSlJKLgndubXyIkZOSi4J3b258h5CSkYqBd29ue4eQkZCJgXdvbnuHj5CPiYB3b257ho+Pjoh/d29teoeOjo2Hf3ZubXqGjo6NiH92bm16ho2NjIh/dm5teYaNjYyHfnZubHmGjIyLhn52bWx5hYyLi4Z+dW1seYWLiouFfnVtbHmFi4qKhH51bGx4hIuKiYR9dWxsd4SJiYmDfHRsbHeEiYiIg3x0a2x3hImIiIN8dGtrd4OIh4eCe3Rranb/')
             audio.volume = 0.5
             audio.play().catch(() => {})
           } catch {}
           
+          // Ocultar notificacion despues de 10 segundos
           setTimeout(() => setNewReservation(null), 10000)
         }
       )
@@ -139,9 +153,10 @@ export default function AdminPage() {
   }, [])
 
   const sendWhatsAppConfirmation = (reservation: Reservation, isConfirmed: boolean) => {
-    const phone = reservation.phone.replace(/\D/g, '')
+    const phone = reservation.phone.replace(/\D/g, '') // Limpiar numero
     const serviceName = serviceLabels[reservation.service_type] || reservation.service_type || "Clase"
     
+    // Formatear fecha de forma segura
     let dateFormatted = "Fecha por confirmar"
     if (reservation.reservation_date) {
       try {
@@ -235,6 +250,121 @@ export default function AdminPage() {
     if (status === "all") return reservations
     return reservations.filter(r => r.status === status)
   }
+
+  // Funciones para el calendario
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const daysInMonth = lastDay.getDate()
+    const startingDay = firstDay.getDay()
+    return { daysInMonth, startingDay }
+  }
+
+  const getReservationsForDate = (day: number) => {
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    return reservations.filter(r => r.reservation_date === dateStr)
+  }
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
+  }
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
+  }
+
+  const monthNames = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ]
+
+  const dayNames = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"]
+
+  const { daysInMonth, startingDay } = getDaysInMonth(currentMonth)
+
+  const CalendarView = () => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <Button variant="outline" size="sm" onClick={prevMonth}>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <h3 className="text-lg font-semibold">
+          {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+        </h3>
+        <Button variant="outline" size="sm" onClick={nextMonth}>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-7 gap-1">
+        {dayNames.map(day => (
+          <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
+            {day}
+          </div>
+        ))}
+        
+        {Array.from({ length: startingDay }).map((_, i) => (
+          <div key={`empty-${i}`} className="aspect-square" />
+        ))}
+        
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1
+          const dayReservations = getReservationsForDate(day)
+          const hasReservations = dayReservations.length > 0
+          const hasPending = dayReservations.some(r => r.status === "pending")
+          const isToday = new Date().toDateString() === new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).toDateString()
+          
+          return (
+            <div
+              key={day}
+              className={`aspect-square border rounded-lg p-1 cursor-pointer transition-colors hover:bg-muted/50 ${
+                isToday ? "border-primary bg-primary/5" : "border-border"
+              } ${hasReservations ? "bg-muted/30" : ""}`}
+              onClick={() => {
+                if (hasReservations && dayReservations.length === 1) {
+                  setSelectedReservation(dayReservations[0])
+                }
+              }}
+            >
+              <div className={`text-sm ${isToday ? "font-bold text-primary" : ""}`}>
+                {day}
+              </div>
+              {hasReservations && (
+                <div className="mt-1 space-y-0.5">
+                  {dayReservations.slice(0, 2).map(res => (
+                    <div
+                      key={res.id}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedReservation(res)
+                      }}
+                      className={`text-xs truncate px-1 py-0.5 rounded cursor-pointer hover:opacity-80 ${
+                        res.status === "pending" 
+                          ? "bg-yellow-200 text-yellow-800" 
+                          : res.status === "confirmed"
+                          ? "bg-green-200 text-green-800"
+                          : "bg-red-200 text-red-800"
+                      }`}
+                      title={`${res.name} - ${res.reservation_time}`}
+                    >
+                      {res.reservation_time?.slice(0, 5)}
+                    </div>
+                  ))}
+                  {dayReservations.length > 2 && (
+                    <div className="text-xs text-muted-foreground text-center">
+                      +{dayReservations.length - 2} mas
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 
   const ReservationTable = ({ data }: { data: Reservation[] }) => (
     <div className="overflow-x-auto">
@@ -343,7 +473,7 @@ export default function AdminPage() {
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => deleteReservation(reservation.id)}
-                              className="bg-destructive text-white hover:bg-destructive/90 hover:text-white hover:shadow-lg"
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               Eliminar
                             </AlertDialogAction>
@@ -361,6 +491,7 @@ export default function AdminPage() {
     </div>
   )
 
+  // Mostrar loading mientras verifica autenticación
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -371,6 +502,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Notificacion de nueva reserva */}
       {newReservation && (
         <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
           <Card className="w-80 border-primary shadow-lg">
@@ -408,7 +540,7 @@ export default function AdminPage() {
                 <ArrowLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">Volver al sitio</span>
               </Link>
-              <div className="h-6 w-px bg-border hidden sm:block" />
+              <div className="h-6 w-px bg-border" />
               <div className="flex items-center gap-3">
                 <Image
                   src="/images/image.png"
@@ -418,17 +550,19 @@ export default function AdminPage() {
                   className="rounded-full"
                 />
                 <div>
-                  <h1 className="text-lg sm:text-xl font-bold text-foreground">Panel Admin</h1>
-                  <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Gestión de Reservas</p>
+                  <h1 className="text-xl font-bold text-foreground">Panel de Administración</h1>
+                  <p className="text-sm text-muted-foreground">Gestión de Reservas</p>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={fetchReservations} disabled={loading}>
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">Actualizar</span>
               </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Salir</span>
               </Button>
             </div>
           </div>
@@ -436,42 +570,42 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8">
+        <div className="grid sm:grid-cols-3 gap-4 mb-8">
           <Card>
-            <CardContent className="pt-4 sm:pt-6">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                <div className="text-center sm:text-left">
-                  <p className="text-xs sm:text-sm text-muted-foreground">Pendientes</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-yellow-600">{pendingCount}</p>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Pendientes</p>
+                  <p className="text-3xl font-bold text-yellow-600">{pendingCount}</p>
                 </div>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
+                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-yellow-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4 sm:pt-6">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                <div className="text-center sm:text-left">
-                  <p className="text-xs sm:text-sm text-muted-foreground">Confirmadas</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-green-600">{confirmedCount}</p>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Confirmadas</p>
+                  <p className="text-3xl font-bold text-green-600">{confirmedCount}</p>
                 </div>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4 sm:pt-6">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                <div className="text-center sm:text-left">
-                  <p className="text-xs sm:text-sm text-muted-foreground">Canceladas</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-red-600">{cancelledCount}</p>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Canceladas</p>
+                  <p className="text-3xl font-bold text-red-600">{cancelledCount}</p>
                 </div>
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center">
-                  <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-red-600" />
                 </div>
               </div>
             </CardContent>
@@ -480,34 +614,56 @@ export default function AdminPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Reservas</CardTitle>
-            <CardDescription>
-              Gestiona las solicitudes de reserva de clases y servicios
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Reservas</CardTitle>
+                <CardDescription>
+                  Gestiona las solicitudes de reserva de clases y servicios
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="w-4 h-4 mr-2" />
+                  Lista
+                </Button>
+                <Button
+                  variant={viewMode === "calendar" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("calendar")}
+                >
+                  <CalendarDays className="w-4 h-4 mr-2" />
+                  Calendario
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
+            ) : viewMode === "calendar" ? (
+              <CalendarView />
             ) : (
               <Tabs defaultValue="pending">
-                <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
-                  <TabsList className="mb-4 w-max sm:w-auto">
-                    <TabsTrigger value="pending" className="text-xs sm:text-sm whitespace-nowrap">
-                      Pendientes ({pendingCount})
-                    </TabsTrigger>
-                    <TabsTrigger value="confirmed" className="text-xs sm:text-sm whitespace-nowrap">
-                      Confirmadas ({confirmedCount})
-                    </TabsTrigger>
-                    <TabsTrigger value="cancelled" className="text-xs sm:text-sm whitespace-nowrap">
-                      Canceladas ({cancelledCount})
-                    </TabsTrigger>
-                    <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-nowrap">
-                      Todas ({reservations.length})
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="pending">
+                    Pendientes ({pendingCount})
+                  </TabsTrigger>
+                  <TabsTrigger value="confirmed">
+                    Confirmadas ({confirmedCount})
+                  </TabsTrigger>
+                  <TabsTrigger value="cancelled">
+                    Canceladas ({cancelledCount})
+                  </TabsTrigger>
+                  <TabsTrigger value="all">
+                    Todas ({reservations.length})
+                  </TabsTrigger>
+                </TabsList>
                 <TabsContent value="pending">
                   <ReservationTable data={filterByStatus("pending")} />
                 </TabsContent>
@@ -525,6 +681,140 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Modal de detalles de reserva */}
+      <Dialog open={!!selectedReservation} onOpenChange={() => setSelectedReservation(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalles de la Reserva</DialogTitle>
+            <DialogDescription>
+              Informacion completa de la reserva
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedReservation && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Badge className={statusConfig[selectedReservation.status].color}>
+                  {statusConfig[selectedReservation.status].label}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  {formatCreatedAt(selectedReservation.created_at)}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Users className="w-5 h-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-semibold">{selectedReservation.name}</p>
+                    <p className="text-sm text-muted-foreground">Cliente</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                    <Phone className="w-4 h-4 text-primary" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{selectedReservation.phone}</p>
+                      <p className="text-xs text-muted-foreground">Telefono</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                    <Mail className="w-4 h-4 text-primary" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{selectedReservation.email}</p>
+                      <p className="text-xs text-muted-foreground">Correo</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Calendar className="w-5 h-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-semibold">{formatDate(selectedReservation.reservation_date)}</p>
+                    <p className="text-sm text-muted-foreground">a las {selectedReservation.reservation_time}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium">{serviceLabels[selectedReservation.service_type] || selectedReservation.service_type}</p>
+                    <p className="text-xs text-muted-foreground">Servicio</p>
+                  </div>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium">{selectedReservation.participants} persona(s)</p>
+                    <p className="text-xs text-muted-foreground">Participantes</p>
+                  </div>
+                </div>
+
+                {selectedReservation.notes && (
+                  <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                    <MessageSquare className="w-5 h-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-sm">{selectedReservation.notes}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Notas</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t">
+                {selectedReservation.status === "pending" && (
+                  <>
+                    <Button
+                      className="flex-1"
+                      onClick={() => {
+                        updateStatus(selectedReservation.id, "confirmed")
+                        setSelectedReservation(null)
+                      }}
+                      disabled={updating === selectedReservation.id}
+                    >
+                      {updating === selectedReservation.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                      )}
+                      Confirmar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 bg-transparent"
+                      onClick={() => {
+                        updateStatus(selectedReservation.id, "cancelled")
+                        setSelectedReservation(null)
+                      }}
+                      disabled={updating === selectedReservation.id}
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Rechazar
+                    </Button>
+                  </>
+                )}
+                {selectedReservation.status !== "pending" && (
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-destructive text-destructive hover:bg-destructive hover:text-white bg-transparent"
+                    onClick={() => {
+                      deleteReservation(selectedReservation.id)
+                      setSelectedReservation(null)
+                    }}
+                    disabled={updating === selectedReservation.id}
+                  >
+                    Eliminar Reserva
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  onClick={() => setSelectedReservation(null)}
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
