@@ -50,6 +50,7 @@ export function Booking() {
     name: "",
     email: "",
     phone: "",
+    phonePrefix: "+52",
     service: "",
     time: "",
     participants: "1",
@@ -159,6 +160,7 @@ export function Booking() {
         name: "",
         email: "",
         phone: "",
+        phonePrefix: "+52",
         service: "",
         time: "",
         participants: "1",
@@ -306,14 +308,32 @@ export function Booking() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Teléfono / WhatsApp</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+52 123 456 7890"
-                    />
+                    <div className="flex gap-2">
+                      <Select
+                        value={formData.phonePrefix}
+                        onValueChange={(value) => setFormData({ ...formData, phonePrefix: value })}
+                      >
+                        <SelectTrigger className="w-25 sm:w-27.5">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="+52">🇲🇽 +52</SelectItem>
+                          <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                          <SelectItem value="+57">🇨🇴 +57</SelectItem>
+                          <SelectItem value="+34">🇪🇸 +34</SelectItem>
+                          <SelectItem value="+54">🇦🇷 +54</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="123 456 7890"
+                        className="flex-1 min-w-0"
+                      />
+                    </div>
                   </div>
                 </div>
 

@@ -343,7 +343,7 @@ export default function AdminPage() {
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => deleteReservation(reservation.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              className="bg-destructive text-white hover:bg-destructive/90 hover:text-white hover:shadow-lg"
                             >
                               Eliminar
                             </AlertDialogAction>
