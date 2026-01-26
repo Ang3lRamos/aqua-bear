@@ -82,7 +82,10 @@ export default function AdminPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  // Verificar autenticación al cargar
+  // Duracion de la sesion en minutos
+  const SESSION_TIMEOUT_MINUTES = 30
+
+  // Verificar autenticacion al cargar
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -93,12 +96,49 @@ export default function AdminPage() {
       }
     }
     checkAuth()
+
+    // Verificar sesion periodicamente y cerrar si expira
+    const interval = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push("/login")
+      }
+    }, 60000) // Verificar cada minuto
+
+    return () => clearInterval(interval)
   }, [router, supabase.auth])
+
+  // Cerrar sesion automaticamente por inactividad
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+
+    const resetTimeout = () => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(async () => {
+        await supabase.auth.signOut()
+        window.location.href = "/login?expired=1"
+      }, SESSION_TIMEOUT_MINUTES * 60 * 1000)
+    }
+
+    // Eventos que resetean el timeout
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
+    events.forEach(event => {
+      document.addEventListener(event, resetTimeout)
+    })
+
+    resetTimeout()
+
+    return () => {
+      clearTimeout(timeoutId)
+      events.forEach(event => {
+        document.removeEventListener(event, resetTimeout)
+      })
+    }
+  }, [supabase.auth])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.push("/login")
-    router.refresh()
+    window.location.href = "/login"
   }
 
   const fetchReservations = async () => {
@@ -313,50 +353,68 @@ export default function AdminPage() {
           const day = i + 1
           const dayReservations = getReservationsForDate(day)
           const hasReservations = dayReservations.length > 0
-          const hasPending = dayReservations.some(r => r.status === "pending")
+          const pendingCount = dayReservations.filter(r => r.status === "pending").length
+          const confirmedCount = dayReservations.filter(r => r.status === "confirmed").length
           const isToday = new Date().toDateString() === new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).toDateString()
           
           return (
             <div
               key={day}
-              className={`aspect-square border rounded-lg p-1 cursor-pointer transition-colors hover:bg-muted/50 ${
+              className={`aspect-square border rounded-lg p-1 cursor-pointer transition-colors hover:bg-muted/50 overflow-hidden ${
                 isToday ? "border-primary bg-primary/5" : "border-border"
               } ${hasReservations ? "bg-muted/30" : ""}`}
               onClick={() => {
-                if (hasReservations && dayReservations.length === 1) {
-                  setSelectedReservation(dayReservations[0])
+                if (hasReservations) {
+                  if (dayReservations.length === 1) {
+                    setSelectedReservation(dayReservations[0])
+                  }
                 }
               }}
             >
-              <div className={`text-sm ${isToday ? "font-bold text-primary" : ""}`}>
+              <div className={`text-xs sm:text-sm ${isToday ? "font-bold text-primary" : ""}`}>
                 {day}
               </div>
               {hasReservations && (
-                <div className="mt-1 space-y-0.5">
-                  {dayReservations.slice(0, 2).map(res => (
-                    <div
-                      key={res.id}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedReservation(res)
-                      }}
-                      className={`text-xs truncate px-1 py-0.5 rounded cursor-pointer hover:opacity-80 ${
-                        res.status === "pending" 
-                          ? "bg-yellow-200 text-yellow-800" 
-                          : res.status === "confirmed"
-                          ? "bg-green-200 text-green-800"
-                          : "bg-red-200 text-red-800"
-                      }`}
-                      title={`${res.name} - ${res.reservation_time}`}
-                    >
-                      {res.reservation_time?.slice(0, 5)}
-                    </div>
-                  ))}
-                  {dayReservations.length > 2 && (
-                    <div className="text-xs text-muted-foreground text-center">
-                      +{dayReservations.length - 2} mas
-                    </div>
-                  )}
+                <div className="mt-0.5 flex flex-wrap gap-0.5 justify-center">
+                  {/* En movil: mostrar puntos de colores */}
+                  <div className="sm:hidden flex gap-0.5 flex-wrap justify-center">
+                    {pendingCount > 0 && (
+                      <div className="w-2 h-2 rounded-full bg-yellow-400" title={`${pendingCount} pendiente(s)`} />
+                    )}
+                    {confirmedCount > 0 && (
+                      <div className="w-2 h-2 rounded-full bg-green-500" title={`${confirmedCount} confirmada(s)`} />
+                    )}
+                    {dayReservations.length > 2 && (
+                      <span className="text-[10px] text-muted-foreground">+{dayReservations.length - 2}</span>
+                    )}
+                  </div>
+                  {/* En desktop: mostrar detalles */}
+                  <div className="hidden sm:block space-y-0.5 w-full">
+                    {dayReservations.slice(0, 2).map(res => (
+                      <div
+                        key={res.id}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedReservation(res)
+                        }}
+                        className={`text-xs truncate px-1 py-0.5 rounded cursor-pointer hover:opacity-80 ${
+                          res.status === "pending" 
+                            ? "bg-yellow-200 text-yellow-800" 
+                            : res.status === "confirmed"
+                            ? "bg-green-200 text-green-800"
+                            : "bg-red-200 text-red-800"
+                        }`}
+                        title={`${res.name} - ${res.reservation_time}`}
+                      >
+                        {res.reservation_time?.slice(0, 5)}
+                      </div>
+                    ))}
+                    {dayReservations.length > 2 && (
+                      <div className="text-xs text-muted-foreground text-center">
+                        +{dayReservations.length - 2} mas
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
